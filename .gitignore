@@ -1,3 +1,4 @@
 .ssh/
 terraform*
 .terraform*
+ansible/inventory.ini
