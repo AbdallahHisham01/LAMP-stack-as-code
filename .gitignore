@@ -2,3 +2,4 @@
 terraform*
 .terraform*
 ansible/inventory.ini
+provider.tf
