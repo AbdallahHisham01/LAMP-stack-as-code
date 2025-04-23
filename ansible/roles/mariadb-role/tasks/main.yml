@@ -1,0 +1,71 @@
+---
+- name: copy repo
+  template:
+    src: roles/mariadb-role/templates/maria.repo.j2
+    dest: /etc/yum.repos.d/maria.repo
+
+- name: Install MariaDB
+  yum:
+    name: mariadb105-server.x86_64 
+    state: present
+
+- name: Install pip
+  yum:
+    name: pip
+    state: present
+
+- name: Install PYMYSQL
+  pip:
+    name: PyMySQL
+    state: present
+
+- name: Start and enable MariaDB service
+  service:
+    name: mariadb
+    enabled: yes
+    state: started
+
+- name: Copy root MySQL config for passwordless login
+  template:
+    src: roles/mariadb-role/templates/.my.cnf.j2
+    dest: /root/.my.cnf
+    owner: root
+    group: root
+    mode: '0600'
+  
+  
+- name: Set root password
+  mysql_user:
+    user: root
+    login_unix_socket: /var/lib/mysql/mysql.sock
+    plugin: mysql_native_password
+    host_all: yes
+    password: "rootpassword"
+
+- name: Create WordPress database
+  mysql_db:
+    name: wordpress
+    state: present
+    login_user: root
+    login_password: "rootpassword"
+
+- name: Create WordPress DB user
+  mysql_user:
+    name: wp_user
+    password: "wp_pass"
+    priv: 'wordpress.*:ALL'
+    host: '%'
+    state: present
+
+- name: Ensure the MariaDB config directory exists
+  file:
+    path: /etc/my.conf.d
+    state: directory
+    mode: '0755'
+
+- name: Copy MariaDB config
+  template:
+    src: mariadb.cnf.j2
+    dest: /etc/my.conf.d/50-server.cnf
+  notify: Restart MariaDB
+

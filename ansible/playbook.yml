@@ -1,0 +1,17 @@
+
+- name: Setup DB
+  hosts: db-ec2
+  connection: ssh
+  become: yes
+  roles:
+    - mariadb-role
+
+- name: Setup FE
+  hosts: fe-ec2
+  connection: ssh
+  become: yes
+  roles:
+    - apache-role
+    - php-role
+    - wordpress-role
+

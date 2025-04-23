@@ -1,0 +1,12 @@
+---
+# tasks file for apache
+- name: ensure httpd is installed
+  ansible.builtin.yum:
+     name: httpd
+     state: present
+
+- name: ensure httpd is started and enabled
+  ansible.builtin.service:
+      name: httpd
+      state: started
+      enabled: yes

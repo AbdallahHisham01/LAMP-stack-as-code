@@ -1,0 +1,77 @@
+---
+# tasks file for wordpress
+
+- name: Download WordPress
+  ansible.builtin.get_url:
+    url: https://wordpress.org/latest.tar.gz
+    dest: /var/www/latest.tar.gz
+
+- name: Extract WordPress archive
+  ansible.builtin.unarchive:
+    src: /var/www/latest.tar.gz
+    dest: /var/www
+    remote_src: yes
+
+- name: Set DB_NAME in wp-config-sample.php
+  ansible.builtin.lineinfile:
+    path: /var/www/wordpress/wp-config-sample.php
+    regexp: "^define\\( *'DB_NAME', *'.*' *\\);"
+    line: "define( 'DB_NAME', 'wordpress' );"
+
+- name: Set DB_USER in wp-config-sample.php
+  ansible.builtin.lineinfile:
+    path: /var/www/wordpress/wp-config-sample.php
+    regexp: "^define\\( *'DB_USER', *'.*' *\\);"
+    line: "define( 'DB_USER', 'root' );"
+
+- name: Set DB_PASSWORD in wp-config-sample.php
+  ansible.builtin.lineinfile:
+    path: /var/www/wordpress/wp-config-sample.php
+    regexp: "^define\\( *'DB_PASSWORD', *'.*' *\\);"
+    line: "define( 'DB_PASSWORD', 'rootpassword' );"
+
+- name: Set DB_HOST in wp-config-sample.php
+  ansible.builtin.lineinfile:
+    path: /var/www/wordpress/wp-config-sample.php
+    regexp: "^define\\( *'DB_HOST', *'.*' *\\);"
+    line: "define( 'DB_HOST', '10.0.2.139' );"
+
+- name: Copy sample config to wp-config.php
+  ansible.builtin.copy:
+    src: /var/www/wordpress/wp-config-sample.php
+    dest: /var/www/wordpress/wp-config.php
+    remote_src: yes
+
+- name: Update DocumentRoot to /var/www/wordpress
+  ansible.builtin.lineinfile:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^DocumentRoot\s+"?/var/www/html"?'
+    line: 'DocumentRoot "/var/www/wordpress"'
+
+- name: Update <Directory> directive for /var/www/wordpress
+  ansible.builtin.lineinfile:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^<Directory\s+"/var/www/html">'
+    line: '<Directory "/var/www/wordpress">'
+
+- name: Ensure DirectoryIndex includes index.php
+  ansible.builtin.lineinfile:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^DirectoryIndex'
+    line: 'DirectoryIndex index.php index.html index.htm'
+    create: yes
+    backup: yes
+
+- name: Set permissions for WordPress directory
+  ansible.builtin.file:
+    path: /var/www/wordpress
+    state: directory
+    recurse: yes
+    owner: apache
+    group: apache
+    mode: '0755'
+
+- name: Restart Apache to apply changes
+  ansible.builtin.service:
+    name: httpd
+    state: restarted
